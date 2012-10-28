@@ -8,11 +8,11 @@ using namespace boost;
 
 typedef adjacency_list<vecS, vecS, undirectedS,
                         no_property, property <edge_weight_t, int > > Graph;
- typedef graph_traits<Graph>::edge_descriptor Edge;
- typedef graph_traits<Graph>::out_edge_iterator OutEdgeIterator;
- typedef graph_traits<Graph>::vertex_descriptor Vertex;
+typedef graph_traits<Graph>::edge_descriptor Edge;
+typedef graph_traits<Graph>::out_edge_iterator OutEdgeIterator;
+typedef graph_traits<Graph>::vertex_descriptor Vertex;
 
- typedef pair<int, int> E;
+typedef pair<int, int> E;
 
 void testcase() {
     int n; // vertices
@@ -43,6 +43,7 @@ void testcase() {
         total_weight += weight[*ei];
     }
 
+    // Let's take out the hammer and compute dijkstra as well...
     std::vector<Vertex> predecessors(num_vertices(g));
     std::vector<int> distances(num_vertices(g));
     dijkstra_shortest_paths(g, 0,
