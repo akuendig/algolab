@@ -11,6 +11,8 @@ using namespace boost;
 
 typedef adjacency_list<vecS, vecS, bidirectionalS,
                         no_property, property <edge_index_t, size_t > > Graph;
+typedef adjacency_list<vecS, vecS, undirectedS,
+                        no_property, property <edge_weight_t, int > > WeightedGraph;
 typedef graph_traits<Graph>::edge_descriptor Edge;
 typedef graph_traits<Graph>::out_edge_iterator OutEdgeIterator;
 typedef graph_traits<Graph>::vertex_descriptor Vertex;
@@ -38,16 +40,15 @@ void testcase() {
         int u, v;
         cin >> u;
         cin >> v;
-        int w = INT_MAX;
         bool success;
         Edge e;
-        tie(e, success) = add_edge(u, v, g);
-        // Find minimum weight
+        // Don't forget to set edge_index through i (we need it below)
+        tie(e, success) = add_edge(u, v, i, g);
+        // Insert weight for all species individually
         for (int k=0; k<s; k++) {
             int t;
             cin >> t;
             species[k][i] = t;
-//            species[s][e] = t;
         }
     }
 
@@ -59,49 +60,65 @@ void testcase() {
 
     property_map<Graph, edge_index_t>::type indices = get(edge_index, g);
 
-    vector<int> edge_weights(e, INT_MAX);
+
+
+    vector<int> edge_weights(e, 10000);
     for (int i=0; i<s; i++) {
         vector<Edge> spanning_tree;
-        kruskal_minimum_spanning_tree(g, back_inserter(spanning_tree),
-                                      weight_map(make_iterator_property_map(species[i].begin(), indices)));
+        kruskal_minimum_spanning_tree(g,
+                                      back_inserter(spanning_tree),
+                                      weight_map(
+                                          make_iterator_property_map(
+                                              species[i].begin(),
+                                              indices
+                                              )
+                                          )
+                                      );
 
         for (vector < Edge >::iterator ei = spanning_tree.begin(); ei != spanning_tree.end(); ++ei) {
             Edge e = *ei;
-            if (edge_weights[indices[e]] < species[i][indices[e]])
+//            cout << "in: " << indices[e] << "\n";
+            if (edge_weights[indices[e]] > species[i][indices[e]]) {
                 edge_weights[indices[e]] = species[i][indices[e]];
+            }
             //total_weight += weight[*ei];
         }
         //        kruskal_minimum_spanning_tree(g, back_inserter(spanning_tree), weight_map(&species[i][0]));
     }
 
+//    for (int i=0; i<e; i++) {
+//        cout << edge_weights[i] << "\n";
+//    }
+//    WeightedGraph forest(v);
+//    for (int i=0; i<e; i++) {
+//        int u, v, w;
+
+//        w = edge_weights[i];
+//        if (w == INT_MAX)
+//            continue;
+
+//        u = (*it)
+//    }
     // Compute dijkstra
     std::vector<Vertex> predecessors(num_vertices(g));
     std::vector<int> distances(num_vertices(g));
 
     dijkstra_shortest_paths(g, start,
-      predecessor_map(&predecessors[0])
+                            predecessor_map(&predecessors[0])
                             .distance_map(&distances[0])
                             .weight_map(
                                 make_iterator_property_map(
-                                    weight_map.begin(),
-                                    get(edge_index, g))));
-//    dijkstra_shortest_paths(g, start, predecessor_map(&predecessors[0]),
-//                            distance_map(&distances[0]),
-//                            weight_map(&edge_weights[0]),
-//                            get(vertex_index, g),
-//                            std::less<int>(),
-//                            closed_plus<int>(),
-//                            (std::numeric_limits<int>::max)(),
-//                            0,
-//                            default_dijkstra_visitor());
+                                    &edge_weights[0],
+                                    indices
+                                    )
+                                )
+                            );
 
-
-//                            indices,
-//                            std::less<int>(), closed_plus<int>(),
-//                            (std::numeric_limits<int>::max)(), 0,
-//                            default_dijkstra_visitor());
-
+    for (vector<int>::iterator it=distances.begin(); it != distances.end(); it++) {
+        cout << *it << "\n";
+    }
     cout << distances[end] << "\n";
+
 }
 
 int main()
