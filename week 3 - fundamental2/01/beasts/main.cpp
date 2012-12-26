@@ -6,6 +6,71 @@ using namespace std;
 
 int prev_run;
 int counter_fallof;
+
+
+int compute_conflicts(vector<int>& grid, int n) {
+    int conflicts = 0;
+    for (int i=1; i<=n; i++) {
+        int c = grid[i];
+        for (int j=1; j< n; j++) {
+            if ((i-j) > 0) {
+                int t = grid[i-j];
+                if (t == c-j || t == c+j) {
+                    conflicts++;
+//                    break;
+                }
+            }
+
+            if ((i+j) <= n) {
+                int t = grid[i+j];
+                if (t == c-j || t == c+j) {
+                    conflicts++;
+//                    break;
+                }
+            }
+
+        }
+    }
+//    cout << conflicts << endl;
+    return conflicts;
+}
+
+bool swapper(vector<int>& grid, int n) {
+    if (n == 1)
+        return true;
+    int conflicts1 = compute_conflicts(grid, n);
+    int conflicts2 = conflicts1;
+    for (int i=1; i <= n; i++) {
+//        cout << i << endl;
+        for (int j=i+1; j <= n; j++) {
+            int tmp = grid[i];
+            grid[i] = grid[j];
+            grid[j] = tmp;
+
+            conflicts2 = compute_conflicts(grid, n);
+
+            if (conflicts2 == 0) {
+                return true;
+            }
+            if (conflicts2 < conflicts1) {
+                conflicts1 = conflicts2;
+                i = 0;
+
+//                continue;
+                break;
+            }
+            tmp = grid[i];
+            grid[i] = grid[j];
+            grid[j] = tmp;
+        }
+//        cout << i << endl;
+
+    }
+    return false;
+}
+
+
+// Recursive Method: Slow
 bool recursion(vector<int>& grid, int depth, int n) {
 //    cout << depth << endl;
     if (depth > n) {
@@ -67,13 +132,16 @@ bool recursion(vector<int>& grid, int depth, int n) {
     return false;
 }
 
-void testcase(vector<int>& grid) {
+void testcase() {
     int n;
     cin >> n;
-//    vector<int> grid(n+1,0);
+    vector<int> grid(n+1,0);
+    for (int i=0; i < n+1; i++) {
+        grid[i] = i;
+    }
     counter_fallof = int(double(n)*0.95);
-//    cout << counter_fallof << endl;
-    if (recursion(grid, 1, n)) {
+
+    if (swapper(grid, n)) {
         for (int i=1; i<=n; i++) {
             cout << grid[i] << " ";
         }
@@ -91,10 +159,10 @@ int main()
     int testcases;
     cin >> testcases;
     prev_run = -1;
-    vector<int> grid(101,0);
 
     for (int i=0; i<testcases; i++) {
-        testcase(grid);
+//        testcase(grid);
+        testcase();
     }
     return 0;
 }
