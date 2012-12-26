@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 using namespace std;
+
 int prev_run;
 int counter_fallof;
 bool recursion(vector<int>& grid, int depth, int n) {
@@ -70,7 +71,8 @@ void testcase(vector<int>& grid) {
     int n;
     cin >> n;
 //    vector<int> grid(n+1,0);
-    counter_fallof = int(double(n)*0.8);
+    counter_fallof = int(double(n)*0.95);
+//    cout << counter_fallof << endl;
     if (recursion(grid, 1, n)) {
         for (int i=1; i<=n; i++) {
             cout << grid[i] << " ";
