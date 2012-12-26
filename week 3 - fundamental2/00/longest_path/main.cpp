@@ -6,13 +6,13 @@
 #include <algorithm>
 using namespace std;
 
-int max_depth(vector<vector<int> >& graph, int origin, int source) {
+int dfs(vector<vector<int> >& graph, int origin, int source) {
     int maxdepth = 1;
     for (vector<int>::iterator it=graph[origin].begin(); it != graph[origin].end(); it++) {
         int c = *it;
 
         if (c != source) {
-            int depth = max_depth(graph, c, origin);
+            int depth = dfs(graph, c, origin)+1;
             if (depth > maxdepth) {
                 maxdepth = depth;
             }
@@ -20,6 +20,22 @@ int max_depth(vector<vector<int> >& graph, int origin, int source) {
     }
 //    std::cout << "in: " << origin << " source: " << source << " distance: " << maxdepth <<  endl;
     return maxdepth;
+}
+
+pair<int, int> dfs_maxdist(vector<vector<int> >& graph, int origin, int source) {
+    pair<int, int> res = make_pair(origin, 0);
+    for (vector<int>::iterator it=graph[origin].begin(); it != graph[origin].end(); it++) {
+        int c = *it;
+
+        if (c != source) {
+            pair<int, int> k = dfs_maxdist(graph, c, origin);
+            k.second += 1;
+            if (k.second > res.second) {
+               res = k;
+            }
+        }
+    }
+    return res;
 }
 
 void testcase() {
@@ -34,42 +50,14 @@ void testcase() {
         graph[p2].push_back(p1);
     }
 
-    // Make a bfs
-    vector<int> distance(v, 0);
-    queue<pair<int, int> > bfs;
-    for (vector<int>::iterator it=graph[0].begin(); it != graph[0].end(); it++) {
-        int c = *it;
-        bfs.push(make_pair(0, c));
-        distance[c] = 1;
-    }
-    while (bfs.size() > 0) {
-        pair<int, int> el = bfs.front();
-        bfs.pop();
-        int l = el.second;
-        int o = el.first;
-        for (vector<int>::iterator it=graph[l].begin(); it != graph[l].end(); it++) {
-            int c = *it;
-            if (c != o) {
-                bfs.push(make_pair(l, c));
-                distance[c]++;
-            }
-        }
-    }
-    int max = distance[0];
-    int maxVertice = 0;
-    for (int i=1; i < v; i++) {
-        if (distance[i] > max) {
-            max = distance[i];
-            maxVertice = i;
-        }
-    }
+
     // Make a dfs
 
     int maxdepth = 1;
-    int origin = maxVertice;
+    int origin = dfs_maxdist(graph, 0,0).first;
     for (vector<int>::iterator it=graph[origin].begin(); it != graph[origin].end(); it++) {
         int c = *it;
-        maxdepth += max_depth(graph, c, origin);
+        maxdepth += dfs(graph, c, origin);
     }
     cout << maxdepth << endl;
 
@@ -77,6 +65,8 @@ void testcase() {
 
 int main()
 {
+    cin.sync_with_stdio(false);
+    cout.sync_with_stdio(false);
     int testcases;
     cin >> testcases;
     for (int i=0; i<testcases; i++) {
