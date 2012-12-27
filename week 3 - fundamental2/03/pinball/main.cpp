@@ -13,6 +13,7 @@ SPOILER <<<
 
 >>>
 */
+
 inline int compute(vector<int>& values, vector<int>& sums, int Sn, int i, int j) {
     return Sn-(sums[j]-sums[i-1])+(j-i+1)*values[j];
 }
