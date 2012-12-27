@@ -5,11 +5,12 @@
 using namespace std;
 
 
-pair<int, int> him(vector<vector<pair<int, int> > >& map, vector<int>& values, int left, int right);
-
-pair<int, int> me(vector<vector<pair<int, int> > >& map, vector<int>& values, int left, int right) {
+int recursion(vector<vector<int > >& map, vector<int>& values, int left, int right) {
     if (left==right) {
-        return make_pair(values[left], 0);
+        return values[left];
+    }
+    if (map[left][right] > 0) {
+        return map[left][right];
     }
     int d = right-left;
     if (d <= 2) {
@@ -19,70 +20,45 @@ pair<int, int> me(vector<vector<pair<int, int> > >& map, vector<int>& values, in
         int r = values[right];
         if (d == 1) {
             if (l>r) {
-                return make_pair(l,r);
+                return l;
             }
-            return make_pair(r,l);
+            return r;
         }
         // Case [left|middle|right]
         int v;
-        int v2 = 0;
         if (l>r) {
             v = l;
             if (m > r) {
                 v += r;
-                v2 += m;
             } else {
                 v += m;
-                v2 += r;
             }
         } else {
             v = r;
             if (m > l) {
                 v += l;
-                v2 += m;
             } else {
                 v += m;
-                v2 = l;
             }
         }
-        return make_pair(v,v2);
+        return v;
     }
 
-    pair<int, int> l = him(map, values, left+1, right);
-    pair<int, int> r = him(map, values, left, right-1);
-    if (l.first+values[left] > r.first+values[right]) {
-        return make_pair(l.first+values[left], l.second);
-    }
-    map[left][right].first = r.first+values[right];
-    map[left][right].second = r.second;
-//    return make_pair(r.first+values[right], r.second);
-    return map[left][right]
+    // We choose the left value:
+    int ll = recursion(map, values, left+2, right);   // He chose the left value as well
+    int lr = recursion(map, values, left+1, right-1); // Chose the right value
+
+    // We choose the right value
+    int rl = lr;
+    int rr = recursion(map, values, left, right-2);
+
+    int k = max(values[left]+min(ll, lr),
+                values[right]+min(rl, rr));
+    map[left][right] = k;
+    //    return make_pair(r.first+values[right], r.second);
+    return k;
 }
 
-pair<int, int> him(vector<vector<pair<int, int> > >& map, vector<int>& values, int left, int right) {
-    if (left==right) {
-        return make_pair(0,values[left]);
-    }
-    int d = right-left;
-    if (d <= 1) {
-        // Case [left|right]
-        int l = values[left];
-        int r = values[right];
-        if (d == 1) {
-            if (l>r) {
-                return make_pair(r,l);
-            }
-            return make_pair(l,r);
-        }
-        assert(false);
-    }
-    pair<int, int> l = me(map, values, left+1, right);
-    pair<int, int> r = me(map, values, left, right-1);
-    if (l.second+values[left] > r.second+values[right]) {
-        return make_pair(l.first, l.second+values[left]);
-    }
-    return make_pair(r.first, r.second+values[right]);
-}
 
 void testcase() {
     vector<int> values;
@@ -93,7 +69,7 @@ void testcase() {
         cout << 0 << endl;
         return;
     }
-    vector<vector<pair<int, int> > > map(n+1,  vector<pair<int, int> >(n+1, make_pair(-1,-1)));
+    vector<vector<int > > map(n+1,  vector<int>(n+1, -1));
 
     for (int i=0; i<n; i++) {
         int t;
@@ -102,8 +78,9 @@ void testcase() {
     }
 
 //    int max = recursion(map, values, 0, n-1);
-    pair<int, int> ret = me(map, values, 0, n-1);
-    cout << ret.first << endl;
+    cout << recursion(map, values, 0, n-1) << endl;
+//    pair<int, int> ret = me(map, values, 0, n-1);
+//    cout << ret.first << endl;
 }
 
 int main()
