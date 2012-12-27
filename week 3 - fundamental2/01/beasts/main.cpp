@@ -54,7 +54,7 @@ bool swapper(vector<int>& grid, int n) {
             }
             if (conflicts2 < conflicts1) {
                 conflicts1 = conflicts2;
-                i = 0;
+//                i = 1;
 
 //                continue;
                 break;
