@@ -44,26 +44,39 @@ void testcase() {
     }
 
     // Set active values
-    vector<int> active(n+1,0);
+    vector<int> activearr;
     int a = 0;
     for (int i=1; i<n; i++) {
         if (values[i] > values[i+1]) {
             if (a == 0) {
-                active[i] = 1;
+                activearr.push_back(i);
             }
             a++;
         } else {
             if (a > 0) {
-                active[i-1] = 1;
+                if (activearr.back() != (i-1)) {
+                    activearr.push_back(i-1);
+                }
             }
             a=0;
         }
     }
     if (a > 0) {
-        active[n-1] = 1;
+        if (activearr.back() != (n-1)) {
+            activearr.push_back(n-1);
+        }
     }
-    active[n] = 1;
+    if (!activearr.back() != (n)) {
+        activearr.push_back(n);
+    }
+
 //    for (vector<int>::iterator it=active.begin(); it!=active.end(); it++) {
+//        cout << *it << " ";
+//    }
+//    cout << endl;
+
+//    cout << "Active Array" << endl;
+//    for (vector<int>::iterator it=activearr.begin(); it!=activearr.end(); it++) {
 //        cout << *it << " ";
 //    }
 //    cout << endl;
@@ -77,10 +90,18 @@ void testcase() {
         int SnSj = Sn-Sj;
         int vj = values[j];
         if (active[j]) {
-            for (int i=1; i<j; i++) {
-                if (!(active[i] || active[i-1])) {
-                    continue;
+            for (vector<int>::iterator it=activearr.begin(); it!=activearr.end(); it++) {
+                int i = *it;
+                int i2=i+1;
+                if (i2 >= j) {
+                    break;
                 }
+                int k2 = SnSj+sums[i2-1]+(j-i2+1)*vj;
+                if (k2>r) {
+                    r = k2;
+//                    cout << i2 << " " << j << endl;
+                }
+
                 int k = SnSj+sums[i-1]+(j-i+1)*vj;
                 if (k>r) {
                     r = k;
