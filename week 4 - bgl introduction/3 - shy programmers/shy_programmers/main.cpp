@@ -32,7 +32,6 @@ void testcase() {
     }
 
     vector< vector<Edge> > embedding(n);
-    vector<Edge> kuratowski_edges;
     bool is_planar = boyer_myrvold_planarity_test(boyer_myrvold_params::graph = g,
                                                   boyer_myrvold_params::embedding = &embedding[0]
                                                  );
@@ -42,11 +41,19 @@ void testcase() {
         return;
     }
     cout << "Testcase, n: " << n << endl;
+
+
     for (vector<vector<Edge> >::iterator it=embedding.begin();
             it != embedding.end(); it++) {
         cout << (*it).size() << endl;
     }
 
+    // Check for K4
+    for (vector<vector<Edge> >::iterator it=embedding.begin();
+            it != embedding.end(); it++) {
+//        cout << (*it).size() << endl;
+
+    }
 //    for (vector<Edge>::iterator it=kuratowski_edges.begin();
 //         it != kuratowski_edges.end(); it++) {
 //        cout << *it << endl;
