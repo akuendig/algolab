@@ -133,7 +133,6 @@ void testcase() {
         }
     }
     sort(winning_teams.begin(), winning_teams.end());
-    int counter = 0;
     for (vector<string>::iterator it=winning_teams.begin(); it!= winning_teams.end(); it++) {
         cout << *it;
         if ((it+1) != winning_teams.end()) {
