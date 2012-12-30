@@ -21,7 +21,7 @@ void testcase() {
     cin >> n;
     int m; // pairs
     cin >> m;
-    Graph g(n);
+    Graph g(n+1);
     for (int i=0; i<m; i++) {
         int u, v;
         cin >> u;
@@ -31,29 +31,36 @@ void testcase() {
         tie(e, success) = add_edge(u,v,g);
     }
 
-    vector< vector<Edge> > embedding(n);
-    bool is_planar = boyer_myrvold_planarity_test(boyer_myrvold_params::graph = g,
-                                                  boyer_myrvold_params::embedding = &embedding[0]
+    for (int i=0; i<n; i++) {
+        Edge e;
+        bool success;
+        tie(e, success) = add_edge(i,n,g);
+    }
+
+//    vector< vector<Edge> > embedding(n+1);
+    bool is_planar = boyer_myrvold_planarity_test(boyer_myrvold_params::graph = g
+//                                                  boyer_myrvold_params::embedding = &embedding[0]
                                                  );
 
     if (!is_planar) {
         cout << "no" << endl;
         return;
     }
-    cout << "Testcase, n: " << n << endl;
+    cout << "yes" << endl;
+//    cout << "Testcase, n: " << n << endl;
 
 
-    for (vector<vector<Edge> >::iterator it=embedding.begin();
-            it != embedding.end(); it++) {
-        cout << (*it).size() << endl;
-    }
-
-    // Check for K4
-    for (vector<vector<Edge> >::iterator it=embedding.begin();
-            it != embedding.end(); it++) {
+//    for (vector<vector<Edge> >::iterator it=embedding.begin();
+//            it != embedding.end(); it++) {
 //        cout << (*it).size() << endl;
+//    }
 
-    }
+//    // Check for K4
+//    for (vector<vector<Edge> >::iterator it=embedding.begin();
+//            it != embedding.end(); it++) {
+////        cout << (*it).size() << endl;
+
+//    }
 //    for (vector<Edge>::iterator it=kuratowski_edges.begin();
 //         it != kuratowski_edges.end(); it++) {
 //        cout << *it << endl;
