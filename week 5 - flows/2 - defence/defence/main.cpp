@@ -88,16 +88,16 @@ void testcase() {
     }
     // Add need to graph
     for (int i=0; i<l; i++) {
+        if (locations[i].need < 0) {
+            locations[i].need = 0;
+            continue;
+        }
         Edge e, rev_e;
         bool success;
         // Set edge from source to match
         tie(e, success) = add_edge(i, sink_edge, g);
         tie(rev_e, success) = add_edge(sink_edge, i, g);
         capacity[e] = locations[i].need;
-        if (locations[i].need < 0) {
-            locations[i].need = 0;
-            continue;
-        }
         capacity[rev_e] = 0;
         rev_edge[e] = rev_e;
         rev_edge[rev_e] = e;
