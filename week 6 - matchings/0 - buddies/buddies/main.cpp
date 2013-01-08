@@ -8,21 +8,19 @@
 using namespace std;
 using namespace boost;
 
-typedef adjacency_list<vecS, vecS, directedS> Traits;
+typedef adjacency_list<vecS, vecS, undirectedS,
+                        property<vertex_index_t, int>,
+                        property<edge_index_t, int>
+                      > Graph;
 
-typedef adjacency_list<vecS, vecS, directedS, no_property,
-                            property<edge_capacity_t, long,
-                            property<edge_residual_capacity_t, long,
-                            property<edge_reverse_t, Traits::edge_descriptor> > > > Graph;
-
-
-typedef graph_traits<Graph>::vertex_descriptor VertexDescriptor;
-typedef graph_traits<Graph>::edge_descriptor EdgeDescriptor;
-
-typedef property_map<Graph, edge_capacity_t>::type EdgeCapacityMap;
-typedef property_map<Graph, edge_reverse_t>::type ReverseEdgeMap;
-typedef property_map<Graph, edge_residual_capacity_t>::type ResidualCapacityMap;
 typedef graph_traits<Graph>::edge_descriptor Edge;
+typedef graph_traits<Graph>::out_edge_iterator OutEdgeIterator;
+typedef graph_traits<Graph>::vertex_descriptor VertexDescriptor;
+
+
+int characterisitics_map[400][10];
+int characterisitics_student[400][400];
+
 inline int get_characteristics_index(vector<string>& characteristics, string& c) {
     int i;
     for (i=0; i<characteristics.size();i++) {
@@ -38,57 +36,49 @@ void testcase() {
     int n, c, f;
     cin >> n >> c >> f;
 
-    vector<string> characteristics(c);
-    Graph g(n+c+2);
-    EdgeCapacityMap capacity = get(edge_capacity, g);
-    ReverseEdgeMap rev_edge = get(edge_reverse, g);
-    ResidualCapacityMap res_capacity = get(edge_residual_capacity, g);
-
-    vector<int> characteristics_capacity(c,0);
-    int source_edge = n+c;
-    int sink_edge = n+c+1;
+//    cout << "Reading" << endl;
+    vector<string> characteristics;
     for (int i=0; i<n; i++) {
-        // Create edges from source to student
-        Edge e, rev_e;
-        bool success;
-        // Set edge from source to match
-        tie(e, success) = add_edge(source_edge, i, g);
-        tie(rev_e, success) = add_edge(i, source_edge, g);
-        capacity[e] = f;
-        capacity[rev_e] = 0;
-        rev_edge[e] = rev_e;
-        rev_edge[rev_e] = e;
-
-        for (int j=0; j<f; j++) {
-            // Create edges from student to characteristics
+        for (int j=0; j<c; j++) {
             string s;
             cin >> s;
             int idx = get_characteristics_index(characteristics, s);
-            characteristics_capacity[idx]++;
-
-            tie(e, success) = add_edge(i, n+idx, g);
-            tie(rev_e, success) = add_edge(n+idx, i, g);
-            capacity[e] = 1;
-            capacity[rev_e] = 0;
-            rev_edge[e] = rev_e;
-            rev_edge[rev_e] = e;
+            characterisitics_map[i][j] = idx;
         }
     }
 
-    // Create edges from characteristics to sink
-    for (int i=0; i<c; i++) {
-        Edge e, rev_e;
-        bool success;
-        // Set edge from source to match
-        tie(e, success) = add_edge(n+i, sink_edge, g);
-        tie(rev_e, success) = add_edge(sink_edge, n+i, g);
-        capacity[e] = characteristics_capacity[i];
-        capacity[rev_e] = 0;
-        rev_edge[e] = rev_e;
-        rev_edge[rev_e] = e;
-    }
-    // Compute max cardinality matching
+//    cout << "arMap" << endl;
+    fill(&characterisitics_student[0][0], &characterisitics_student[399][399], 0);
 
+    for (int x=0; x<n; x++) {
+        for (int i=0; i<c; i++) {
+            int ci = characterisitics_map[x][i];
+            for (int y=0; y<n; y++) {
+                if (x == y) {
+                    continue;
+                }
+                for (int j=0; j<c; j++) {
+                    int cj = characterisitics_map[y][j];
+                    if (ci == cj) {
+                        characterisitics_student[x][y]++;
+//                        characterisitics_student[y][x]++;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    Graph g(n);
+    for (int x=0; x<n; x++) {
+        for (int y=x+1; y<n; y++) {
+            if (characterisitics_student[x][y] > f) {
+                Edge e;
+                bool success;
+                tie(e, success) = add_edge(x,y,g);
+            }
+        }
+    }
     vector<VertexDescriptor> mate(n);
     edmonds_maximum_cardinality_matching(g, &mate[0]);
     const VertexDescriptor NULL_VERTEX = graph_traits<Graph>::null_vertex();
@@ -112,7 +102,6 @@ int main()
     cin >> testcases;
 
     for (int i=0; i<testcases; i++) {
-//        testcase(grid);
         testcase();
     }
     return 0;
