@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <queue>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/max_cardinality_matching.hpp>
 
@@ -17,97 +18,85 @@ typedef graph_traits<Graph>::edge_descriptor Edge;
 typedef graph_traits<Graph>::out_edge_iterator OutEdgeIterator;
 typedef graph_traits<Graph>::vertex_descriptor VertexDescriptor;
 
+const VertexDescriptor NULL_VERTEX = graph_traits<Graph>::null_vertex();
+
+void coverPath(Graph& g, int current, vector<VertexDescriptor>& mate, vector<bool>& covered, vector<vector<int> >& connections) {
+    for (vector<int>::iterator it=connections[current].begin(); it != connections[current].end(); it++) {
+        int nb = *it;
+        covered[nb] = true;
+        if (mate[nb] != NULL_VERTEX) {
+            int ground_node = mate[nb];
+            if (!covered[ground_node]) {
+                covered[ground_node] = true;
+                coverPath(g, ground_node, mate, covered, connections);
+            }
+        }
+    }
+}
+
 void testcase() {
-    int g, s, l;
-    cin >> g >> s >> l;
+    int num_g, num_s, l;
+    cin >> num_g >> num_s >> l;
 
-    Graph graph(g+s);
-    vector<vector<int> > connections(g+s, vector<int>());
+    int total_vertices = num_g+num_s;
+    Graph graph(total_vertices);
 
-    vector<int > edges_count(g+s, 0);
+    vector<vector<int> > connections(total_vertices, vector<int>());
     for (int i=0; i<l; i++) {
         int gi, si;
         cin >> gi >> si;
         Edge e;
         bool success;
-        tie(e, success) = add_edge(gi,g+si, graph);
-        edges_count[gi]++;
-        edges_count[g+si]++;
-        connections[gi].push_back(g+si);
-        connections[g+si].push_back(g);
+        tie(e, success) = add_edge(gi,num_g+si, graph);
+        connections[gi].push_back(num_g+si);
+        connections[num_g+si].push_back(num_g);
     }
-    vector<VertexDescriptor> mate(g+s);
+
+    vector<VertexDescriptor> mate(total_vertices);
+    vector<bool> covered(total_vertices,false);
+    vector<bool> unmatched(total_vertices, false);
+
     edmonds_maximum_cardinality_matching(graph, &mate[0]);
-    const VertexDescriptor NULL_VERTEX = graph_traits<Graph>::null_vertex();
-
-    vector<int> nground;
-    vector<int> nsatellite;
-
-    vector<bool> covered(g+s, false);
-
-    for(int i = 0; i < g+s; ++i) {
+    int m=0;
+    for(int i = 0; i < num_g; ++i) {
         if(mate[i] == NULL_VERTEX) {
-//            cout << "This shouldn't happen" << endl;
-            covered[i] = true;
-            continue;
-        }
-        int other = mate[i];
-        if (other < i) {
-            continue;
-        }
-        int chosen;
-
-//        if (edges_count[i] >= edges_count[other]) {
-//            chosen = i;
-//        } else {
-//            chosen = other;
-//        }
-        if (covered[i] && covered[other]) {
-            continue;
-        }
-        // choose max
-        if (!covered[i] && !covered[other]) {
-            if (connections[i].size() >= connections[other].size()) {
-                covered[i] = true;
-                chosen = i;
-                for (vector<int>::iterator it=connections[i].begin(); it != connections[i].end(); it++) {
-                    covered[*it] = true;
-                }
-            } else {
-                covered[other] = true;
-                chosen = other;
-                for (vector<int>::iterator it=connections[other].begin(); it != connections[other].end(); it++) {
-                    covered[*it] = true;
-                }
-            }
-        } else if (covered[i]) {
-            covered[other] = true;
-            for (vector<int>::iterator it=connections[other].begin(); it != connections[other].end(); it++) {
-                covered[*it] = true;
-            }
-            chosen = other;
-        } else {
-            covered[i] = true;
-            for (vector<int>::iterator it=connections[i].begin(); it != connections[i].end(); it++) {
-                covered[*it] = true;
-            }
-            chosen = i;
-        }
-
-        if (chosen < g) {
-            nground.push_back(chosen);
-        } else {
-            nsatellite.push_back(chosen-g);
+            ////            cout << i << " -- " << mate[i] << endl;
+            ////            m++;
+            //            cout << "optimal" << endl;
+            //            return;
+            covered[i]   = true;
+            unmatched[i] = true;
         }
     }
-    cout << nground.size() << " " << nsatellite.size() << endl;
-    for (int i=0; i<nground.size(); i++) {
-        cout << nground[i] << " ";
+
+    // make use of structure of the graph.
+    for (int i=0; i < num_g; i++) {
+        if (unmatched[i]) {
+            coverPath(graph, i, mate, covered, connections);
+        }
     }
-    for (int i=0; i<nsatellite.size(); i++) {
-        cout << nsatellite[i] << " ";
+
+    vector<int> out_grounds;
+    vector<int> out_sattellite;
+    for (int i=0; i<num_g; i++) {
+        if (!covered[i]) {
+            out_grounds.push_back(i);
+        }
+    }
+    for (int i=num_g; i<total_vertices; i++) {
+        if (covered[i]) {
+            out_sattellite.push_back(i-num_g);
+        }
+    }
+    cout << out_grounds.size() << " " << out_sattellite.size() << endl;
+    for (vector<int>::iterator it=out_grounds.begin(); it!=out_grounds.end(); it++) {
+        cout << *it << " ";
+    }
+    for (vector<int>::iterator it=out_sattellite.begin(); it!=out_sattellite.end(); it++) {
+        cout << *it << " ";
     }
     cout << endl;
+
 
 }
 
