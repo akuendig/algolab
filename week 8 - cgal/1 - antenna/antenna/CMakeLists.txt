@@ -3,6 +3,8 @@
 
 
 project(antenna)
+set(CMAKE_BUILD_TYPE Debug)
+
 
 cmake_minimum_required(VERSION 2.6.2)
 if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
@@ -28,3 +30,8 @@ else()
   
 endif()
 
+set(MAIN
+    main.cpp
+)
+
+add_executable(antenna ${MAIN})
