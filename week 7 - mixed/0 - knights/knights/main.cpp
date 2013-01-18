@@ -2,6 +2,8 @@
 #include <vector>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/push_relabel_max_flow.hpp>
+#include <boost/graph/edmonds_karp_max_flow.hpp>
+
 #include <algorithm>
 
 using namespace std;
@@ -19,11 +21,12 @@ typedef property_map<Graph, edge_reverse_t>::type ReverseEdgeMap;
 typedef property_map<Graph, edge_residual_capacity_t>::type ResidualCapacityMap;
 typedef graph_traits<Graph>::edge_descriptor Edge;
 
-inline int get_index(int m, int i, int j) {
-    return m*i+j;
+int m, n, k;
+inline int get_index(int i, int j) {
+    return m*j+i;
 }
 
-inline int madd_edge(Graph& g,
+void madd_edge(Graph& g,
                      EdgeCapacityMap& capacity,
                      ReverseEdgeMap& rev_edge,
                      ResidualCapacityMap& res_capacity,
@@ -34,97 +37,88 @@ inline int madd_edge(Graph& g,
     tie(e, success) = add_edge(src, end, g);
     tie(rev_e, success) = add_edge(end, src, g);
     capacity[e] = w;
-    capacity[rev_e] = w;
+    capacity[rev_e] = 0;
     rev_edge[e] = rev_e;
     rev_edge[rev_e] = e;
 }
 
 void testcase() {
-    int m, n, k;
     cin >> m >> n >> k;
-    int source_edge = m*n;
-    int sink_edge = m*n+1;
-    Graph g(m*n+2);
+    int source_edge = 2*m*n;
+    int sink_edge = 2*m*n+1;
+    int offset = m*n;
+    Graph g(2*m*n+2);
     EdgeCapacityMap capacity = get(edge_capacity, g);
     ReverseEdgeMap rev_edge = get(edge_reverse, g);
     ResidualCapacityMap res_capacity = get(edge_residual_capacity, g);
 
+    // Connect left and right outgoing edges to sink
     for (int i=0; i<m; i++) {
-        for (int j=0; j<n; j++) {
-            int idx = get_index(m, i, j);
-            if (i+1 < m) {
-                int end = get_index(m, i+1, j);
-                madd_edge(g, capacity, rev_edge, res_capacity, 1, idx, end);
-            }
-            if (j+1 < m) {
-                int end = get_index(m, i, j+1);
-                madd_edge(g, capacity, rev_edge, res_capacity, 1, idx, end);
-            }
-        }
-    }
-    for (int i=0; i<m; i++) {
-        int j, src, end;
-        j=0;
-        src = get_index(m, i,j);
-        Edge e, rev_e;
-        bool success;
-        // Create edge from edge to sink
-        tie(e, success) = add_edge(src, sink_edge, g);
-        tie(rev_e, success) = add_edge(sink_edge, src, g);
-        capacity[e] = 1;
-        capacity[rev_e] = 0;
-        rev_edge[e] = rev_e;
-        rev_edge[rev_e] = e;
-        j=m-1;
-        src = get_index(m, i,j);
-        tie(e, success) = add_edge(src, sink_edge, g);
-        tie(rev_e, success) = add_edge(sink_edge, src, g);
-        capacity[e] = 1;
-        capacity[rev_e] = 0;
-        rev_edge[e] = rev_e;
-        rev_edge[rev_e] = e;
+        int src;
+        // left
+        src = get_index(i, 0) + offset;
+        madd_edge(g, capacity, rev_edge, res_capacity, 1, src, sink_edge);
+
+        // right
+        src = get_index(i,n-1) + offset;
+        madd_edge(g, capacity, rev_edge, res_capacity, 1, src, sink_edge);
     }
 
+    // Connect upper and lower edges to sink
     for (int j=0; j<n; j++) {
-        int i, src, end;
-        i=0;
-        src = get_index(m, i,j);
-        Edge e, rev_e;
-        bool success;
-        // Create edge from edge to sink
-        tie(e, success) = add_edge(src, sink_edge, g);
-        tie(rev_e, success) = add_edge(sink_edge, src, g);
-        capacity[e] = 1;
-        capacity[rev_e] = 0;
-        rev_edge[e] = rev_e;
-        rev_edge[rev_e] = e;
-        j=n-1;
-        src = get_index(m, i,j);
-        tie(e, success) = add_edge(src, sink_edge, g);
-        tie(rev_e, success) = add_edge(sink_edge, src, g);
-        capacity[e] = 1;
-        capacity[rev_e] = 0;
-        rev_edge[e] = rev_e;
-        rev_edge[rev_e] = e;
+        int src;
+
+        // upper
+        src = get_index(0, j)+offset;
+        madd_edge(g, capacity, rev_edge, res_capacity, 1, src, sink_edge);
+
+        // lower
+        src = get_index(m-1, j)+offset;
+        madd_edge(g, capacity, rev_edge, res_capacity, 1, src, sink_edge);
     }
+
     // Insert knights
     for (int i=0; i<k; i++) {
         int x, y;
         cin >> x >> y;
 
-        int end = get_index(m, y, x);
-        Edge e, rev_e;
-        bool success;
+        int end = get_index(x, y);
         // Create edge from edge to sink
-        tie(e, success) = add_edge(source_edge, end, g);
-        tie(rev_e, success) = add_edge(end, source_edge, g);
-        capacity[e] = 1;
-        capacity[rev_e] = 0;
-        rev_edge[e] = rev_e;
-        rev_edge[rev_e] = e;
+        madd_edge(g, capacity, rev_edge, res_capacity, 1, source_edge, end);
+
     }
+
+    for (int i=0; i<m; i++) {
+        for (int j=0; j<n; j++) {
+            int a, b;
+            int c, d;
+            a = get_index(i, j);
+            c = a+offset;
+            madd_edge(g, capacity, rev_edge, res_capacity, 1, a, c);
+
+            if (i+1 < m) {
+                b = get_index(i+1, j);
+                d = b + offset;
+
+                madd_edge(g, capacity, rev_edge, res_capacity, 1, c, b);
+                madd_edge(g, capacity, rev_edge, res_capacity, 1, d, a);
+            }
+            if (j+1 < n) {
+                b = get_index(i, j+1);
+                d = b + offset;
+
+                madd_edge(g, capacity, rev_edge, res_capacity, 1, c, b);
+                madd_edge(g, capacity, rev_edge, res_capacity, 1, d, a);
+            }
+        }
+    }
+
+
     int max = push_relabel_max_flow(g, source_edge, sink_edge);
     cout << max << endl;
+//    long flow = edmonds_karp_max_flow(g, source_edge, sink_edge);
+      //capacity, res_capacity, rev_edge, &end_color[0], &pred[0]);
+//    cout << flow << endl;
 }
 
 int main()
