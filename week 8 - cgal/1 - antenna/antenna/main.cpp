@@ -49,7 +49,6 @@ void testcases() {
         Min_Circle_Traits::Circle c = mc.circle();
         K::FT r = sqrt(c.squared_radius()); // you need Exact_predicates_exact_constructions_kernel_with_sqrt
         cout << ceil_to_double(r) << endl;
-
         points.clear();
     }
 }
