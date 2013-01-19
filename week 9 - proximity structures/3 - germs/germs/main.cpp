@@ -1,19 +1,21 @@
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/squared_distance_2.h>
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <limits>
+#include <algorithm>
 
-typedef CGAL::Exact_predicates_exact_constructions_kernel K;
-typedef CGAL::Delaunay_triangulation_2<K>  Triangulation;
-typedef Triangulation::Finite_edges_iterator  Edge_iterator;
-typedef Triangulation::Face_handle  Face_handle;
-typedef Triangulation::Vertex_handle  Vertex_handle;
-typedef Triangulation::Point  Point;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel  K;
+typedef CGAL::Triangulation_vertex_base_with_info_2<K::FT,K> Vb;
+typedef CGAL::Triangulation_face_base_2<K>                   Fb;
+typedef CGAL::Triangulation_data_structure_2<Vb,Fb>          Tds;
+typedef CGAL::Delaunay_triangulation_2<K,Tds>                Delaunay;
+typedef Delaunay::Finite_vertices_iterator                   VI;
+typedef Delaunay::Finite_edges_iterator                      EI;
 using namespace std;
-
-double bl, bb, br, bt;
 
 double floor_to_double(const K::FT& x)
 {
@@ -22,113 +24,65 @@ double floor_to_double(const K::FT& x)
   while (a+1 <= x) a += 1;
   return a;
 }
-inline double compute_size(int time) {
-	double dtime = double(time);
-	double size = (dtime*dtime)+0.5;
-	return size;
-}
-int update(int time, int alive, map<Vertex_handle, bool> &alive_map, Triangulation &t) {
-	double size = compute_size(time);
-	double size2 = size*size;
-	double size24 = size2*4.0;
-    for (Triangulation::Vertex_iterator it=t.finite_vertices_begin(); it !=t.finite_vertices_end(); it++) {
-    	if (t.is_infinite(it)) {
-    		cout << "finite edge" << endl;
-    		continue;
-    	}
-        if (alive_map[it]) {
-        	Point p = it->point();
-        	double px = CGAL::to_double(p.hx());
-        	double py = CGAL::to_double(p.hy());
-        	if (px-size <= bl || px+size >= br || py-size <= bb || py+size >= bt) {
-        		alive_map[it] = false;
-        		alive--;
-//        		cout << "Colliding with border" << endl;
-//    			cout << px << " " << py << "s: " << size << " b: " << bl << " " << br << " " << bb << " " << bt << endl;
-        		continue;
-        	}
 
-            Triangulation::Vertex_circulator c = t.incident_vertices(it);
-            if (c == 0) {
-            	continue;
-            }
-            do {
-            	if (t.is_infinite(c)) {
-            		continue;
-            	}
-            	Point p2 = c->point();
-            	double d2 = CGAL::to_double(CGAL::squared_distance(p, p2));
-            	if (size24 >= d2) {
-            		Vertex_handle sv = it;
-            		Vertex_handle se = c.base();
-            		if (alive_map[sv]) {
-            			alive--;
-//            			cout << "updating alive" << endl;
-            			alive_map[sv] = false;
-            		}
-            		if (alive_map[se]) {
-            			alive--;
-            			alive_map[se] = false;
-//            			cout << "updating alive" << endl;
-            		}
-            	}
-            } while (++c != t.incident_vertices(it));
-        }
-    }
-    return alive;
+int hours(K::FT& in) {
+	double d = CGAL::to_double(in);
+	double z = sqrt(d)-0.5;
+	int k;
+	if (z <= 0.0) {
+		k = 0;
+	} else {
+		k = ceil(sqrt(z));
+	}
+	return k;
 }
 
 void testcases() {
     size_t n;
-    std::vector<Triangulation::Point> points;
+    std::vector<Delaunay::Point> points;
     while (cin >> n && n > 0) {
         points.reserve(n);
 
+        double l, b, r, t;
         // left, bottom, right, top
-        cin >> bl >> bb >> br >> bt;
+        cin >> l >> b >> r >> t;
 
         for (size_t i = 0; i < n; i++) {
         	double x, y;
         	cin >> x >> y;
-            Triangulation::Point p(x,y);
+            Delaunay::Point p(x,y);
             points.push_back(p);
         }
 
-        Triangulation t;
-        t.insert(points.begin(), points.end());
-        int alive = n;
-        map<Vertex_handle, bool> alive_map;
-        // Set
-        for (Triangulation::Vertex_iterator it=t.vertices_begin(); it !=t.vertices_end(); it++) {
-            alive_map[it] = true;
+
+        Delaunay dt;
+        dt.insert(points.begin(), points.end());
+        // info (-> squared distance to nearest neighbor, initially, the boundary)
+        for (VI v = dt.finite_vertices_begin(); v != dt.finite_vertices_end(); ++v) {
+        	v->info() = min(min(v->point().x() - l, r - v->point().x()),
+        				std::min(v->point().y() - b, t - v->point().y()));
+        	v->info() *= v->info();
+         }
+
+        // compute all nearest neighbors
+        for (EI e = dt.finite_edges_begin(); e != dt.finite_edges_end(); ++e) {
+            Delaunay::Vertex_handle v1 = e->first->vertex(dt.cw(e->second));
+            Delaunay::Vertex_handle v2 = e->first->vertex(dt.ccw(e->second));
+            K::FT d = CGAL::squared_distance(v1->point(), v2->point()) / 4;
+            v1->info() = std::min(v1->info(), d);
+            v2->info() = std::min(v2->info(), d);
         }
-
-        int time = 0;
-        bool fbool = false;
-        bool mbool = false;
-        bool lbool = false;
-//        cout  << "new testcase: "<< n << " " << (n/2) << "d" << endl;
-        while (true) {
-        	alive = update(time, alive, alive_map, t);
-//        	cout << endl << "time: " << time << ": alive: " << alive << endl;
-        	if (!fbool && alive < n) {
-        		fbool = true;
-        		cout << time << " ";
-        	}
-        	if (!mbool && (alive*2 < (n) || alive == 0)) {
-        		mbool = true;
-        		cout << time << " ";
-        	}
-        	if (!lbool && alive <= 0) {
-
-        		cout << time;
-        		break;
-        	}
-        	time++;
+        vector<K::FT> ltv;
+        ltv.reserve(n);
+        for (VI v = dt.finite_vertices_begin(); v != dt.finite_vertices_end(); ++v) {
+        	ltv.push_back(v->info());
         }
-//        cout << " end ";
-        cout << endl;
-
+        sort(ltv.begin(), ltv.end());
+//        for (vector<int>::iterator it=minf.begin(); it!=minf.end(); it++) {
+//        	cout << *it << " ";
+//        }
+//        cout << endl;
+        cout << hours(ltv[0]) << " " << hours(ltv[n/2]) << " " << hours(ltv[n-1]) << endl;
         points.clear();
     }
 }
