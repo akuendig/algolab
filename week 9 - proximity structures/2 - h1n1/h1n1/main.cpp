@@ -1,11 +1,11 @@
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/squared_distance_2.h>
 #include <iostream>
 #include <vector>
 #include <cmath>
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Delaunay_triangulation_2<K>  Triangulation;
 typedef Triangulation::Finite_edges_iterator  Edge_iterator;
 typedef Triangulation::Face_handle  Face_handle;
@@ -20,48 +20,68 @@ double floor_to_double(const K::FT& x)
   return a;
 }
 
-bool dfs(Triangulation &t, double d, Face_handle origin, map<Face_handle, bool>& visitor_map) {
-    for (int i=0; i<3; i++) {
-        Triangulation::Segment s = t.segment(origin,0);
-//        double d = CGAL::to_double(s)
+bool dfs(Triangulation &t, double distance, Face_handle origin, map<Face_handle, int>& visitor_map, int cur_it) {
+	for (int i=0; i<3; i++) {
+        Triangulation::Segment s = t.segment(origin,i);
+        double d = CGAL::to_double(s.squared_length());
+        if (d >= distance) {
+        	Face_handle nb = origin->neighbor(i);
+        	if (visitor_map[nb] == cur_it) {
+        		continue;
+        	}
+
+        	if (t.is_infinite(nb)) {
+        		return true;
+        	}
+        	visitor_map[nb] = cur_it;
+        	if (dfs(t, distance, nb, visitor_map, cur_it)) {
+        		return true;
+        	}
+        }
     }
+    return false;
 }
 
 void testcases() {
     size_t n;
     std::vector<Triangulation::Point> points;
-    map<Face_handle, bool> visitor_map;
     while (cin >> n && n > 0) {
         points.reserve(n);
         for (size_t i = 0; i < n; i++) {
-            Triangulation::Point p;
-            cin >> p;
+        	double x, y;
+        	cin >> x >> y;
+            Triangulation::Point p(x,y);
+//            cin >> p;
             points.push_back(p);
         }
 
         Triangulation t;
         t.insert(points.begin(), points.end());
+        map<Face_handle, int> visitor_map;
+        for (Triangulation::Face_iterator it=t.finite_faces_begin(); it !=t.finite_faces_end(); it++) {
+            visitor_map[it] = -1;
+        }
 
         size_t m;
         cin >> m;
         for (size_t i=0; i<m; i++) {
-            Triangulation::Point p;
-            cin >> p;
+        	double x, y;
+        	cin >> x >> y;
+            Triangulation::Point p(x,y);
+//            Triangulation::Point p;
+//            cin >> p;
             double d;
             cin >> d;
             Triangulation::Point nv = t.nearest_vertex(p)->point();
             double distance2 = CGAL::to_double(CGAL::squared_distance(nv, p));
-            if (distance2 > d) {
+            if (distance2 < d) {
                 cout << "n";
                 continue;
             }
             Triangulation::Face_handle f = t.locate(p);
 
-            for (Triangulation::Face_iterator it=t.finite_faces_begin(); it !=t.finite_faces_end(); it++) {
-                visitor_map[it] = false;
-            }
-            visitor_map[f] = true;
-            if (dfs(t, d, f, visitor_map)) {
+            visitor_map[f] = i;
+            if (t.is_infinite(f) || dfs(t, d*4.0, f, visitor_map, i)) {
                 cout << "y";
             } else {
                 cout << "n";
