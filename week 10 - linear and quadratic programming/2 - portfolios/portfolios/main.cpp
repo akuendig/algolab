@@ -27,64 +27,66 @@ int ceil_to_double(const CGAL::Quotient<ET>& x) {
   return a;
 }
 
-
+typedef struct {
+	int cost;
+	int ret;
+	int var;
+} cust;
 void testcases() {
     size_t p;
 //	const int X = 0;
 //	const int Y = 1;
 //	const int ZZ = 2;
 
-	int num_nutrients, num_foods;
-	int nutrients[41][2];
-	int food_nutrients[101][41];
-	int	prices[101];
+    int costs[101];
+    int ereturn[101];
+    int covariances[101][101];
+    cust customers[11];
+
     while (true) {
-    	cin >> num_nutrients >> num_foods;
-    	if (num_nutrients == 0 && num_foods == 0) {
+    	int n_assets, m_customers;
+    	cin >> n_assets >> m_customers;
+    	if (n_assets == 0 && m_customers == 0) {
     		break;
     	}
-    	for (int i=0; i<num_nutrients; i++) {
-    		cin >> nutrients[i][0] >> nutrients[i][1];
+    	for (int i=0; i<n_assets; i++) {
+    		cin >> costs[i] >> ereturn[i];
     	}
-    	for (int i=0; i<num_foods; i++) {
-    		cin >> prices[i];
-    		for (int j=0; j<num_nutrients; j++) {
-    			cin >> food_nutrients[i][j];
+    	for (int i=0; i<n_assets; i++) {
+    		for (int j=0; j<n_assets; j++) {
+    			cin >> covariances[i][j];
     		}
     	}
-    	int FOODS = 0;
-    	Program qp (CGAL::SMALLER, true, 0, false, 0);
-    	// function to minimize
-    	for (int i=0; i < num_foods; i++) {
-    		qp.set_c(FOODS+i, prices[i]);
-    	}
 
-    	int eq_counter = 0;
-
-    	for (int i=0; i<num_nutrients; i++) {
-    		for (int j=0;j<num_foods;j++) {
-        		qp.set_a(FOODS+j,eq_counter,food_nutrients[j][i]);
+    	for (int i=0; i<m_customers; i++) {
+    		int cost, ret, var;
+    		cin >> cost >> ret >> var;
+    		Program qp (CGAL::SMALLER, true, 0, false, 0);
+    		for (int i=0; i<n_assets; i++) {
+    			for (int j=0; j<n_assets; j++) {
+    				qp.set_d(i, j, 2*covariances[i][j]);
+    			}
     		}
-    		qp.set_b(eq_counter, nutrients[i][1]);
-    		eq_counter++;
-    	}
 
-    	for (int i=0; i<num_nutrients; i++) {
-    		for (int j=0;j<num_foods;j++) {
-        		qp.set_a(FOODS+j,eq_counter,food_nutrients[j][i]);
+    		for (int i=0; i<n_assets; i++) {
+    			qp.set_a(i, 0, ereturn[i]);
+
+    			qp.set_a(i, 1, costs[i]);
+
     		}
-    		qp.set_b(eq_counter, nutrients[i][0]);
-    		qp.set_r(eq_counter, CGAL::LARGER);
-    		eq_counter++;
+			qp.set_r(0, CGAL::LARGER);
+			qp.set_b(0, ret);
+
+			qp.set_b(1, cost);
+
+			Solution s = CGAL::solve_nonnegative_quadratic_program(qp, ET());
+    		if (s.is_optimal() && CGAL::to_double(s.objective_value()) <= var) {
+    			//cout << CGAL::to_double(s.objective_value()) << " var: " << var << " ";
+    			cout << "Yes." << endl;
+    		} else {
+    			cout << "No." << endl;
+    		}
     	}
-
-    	Solution s = CGAL::solve_nonnegative_quadratic_program(qp, ET());
-    	if (s.is_optimal()) {
-			cout << floor(CGAL::to_double(s.objective_value())) << endl;
-		} else {
-			cout << "No such diet.\n";
-		}
-
 
     }
 }
