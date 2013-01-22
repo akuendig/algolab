@@ -53,6 +53,7 @@ void testcases() {
     			int a;
     			cin >> a;
         		qp.set_a(j, i, a);
+        		qp.set_a(j, i+n, a);
 
         		la += a*a;
     		}
@@ -61,6 +62,7 @@ void testcases() {
     		int b;
     		cin >> b;
     		qp.set_b(i, b);
+    		qp.set_b(i+n, b);
     	}
 
     	Solution s = CGAL::solve_linear_program(qp, ET());
